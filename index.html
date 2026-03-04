@@ -1,0 +1,1222 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+    <title>時数表（日付・土日対応・見出し固定版）</title>
+    <!-- 丸ゴシック体の読み込み -->
+    <link href="https://fonts.googleapis.com/css2?family=M+PLUS+Rounded+1c:wght@400;700&display=swap" rel="stylesheet">
+    <style>
+        /* =========================================
+           ベース設定 & レイアウト
+           ========================================= */
+        body {
+            font-family: 'M PLUS Rounded 1c', sans-serif;
+            min-height: 100vh;
+            margin: 0;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            background: linear-gradient(135deg, #a8edea 0%, #fed6e3 100%);
+            color: #333;
+            overflow: hidden;
+        }
+
+        .app-wrapper {
+            width: 98%;
+            max-width: 1700px;
+            height: 96vh;
+            display: flex;
+            flex-direction: column;
+        }
+
+        .glass-panel {
+            background: rgba(255, 255, 255, 0.4);
+            backdrop-filter: blur(12px);
+            -webkit-backdrop-filter: blur(12px);
+            border: 1px solid rgba(255, 255, 255, 0.5);
+            border-radius: 20px;
+            box-shadow: 0 8px 32px 0 rgba(31, 38, 135, 0.15);
+        }
+
+        /* =========================================
+           トップバー & タブ
+           ========================================= */
+        .top-bar {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 10px 20px;
+            flex-shrink: 0;
+        }
+
+        .tab-container {
+            display: flex;
+            gap: 5px;
+        }
+
+        .tab-btn {
+            padding: 8px 15px;
+            border-radius: 12px 12px 0 0;
+            border: none;
+            background: rgba(255, 255, 255, 0.3);
+            cursor: pointer;
+            font-weight: bold;
+            transition: all 0.3s;
+            font-size: 0.9rem;
+        }
+
+        .tab-btn.active {
+            background: white !important;
+            color: #2c3e50;
+            box-shadow: 0 -4px 10px rgba(0,0,0,0.05);
+        }
+
+        .sub-tab-container {
+            display: flex;
+            gap: 5px;
+            padding: 0 20px 5px;
+            flex-shrink: 0;
+            overflow-x: auto;
+        }
+
+        .sub-tab-btn {
+            padding: 5px 12px;
+            border-radius: 8px;
+            border: 1px solid rgba(255, 255, 255, 0.5);
+            background: rgba(255, 255, 255, 0.2);
+            cursor: pointer;
+            font-size: 0.8rem;
+            font-weight: bold;
+            transition: all 0.3s;
+            white-space: nowrap;
+        }
+
+        .sub-tab-btn.active {
+            background: #fff !important;
+            color: #2c3e50;
+            border: 1px solid #999;
+        }
+
+        .app-title {
+            font-weight: bold;
+            font-size: 1.2rem;
+            color: #2c3e50;
+        }
+
+        .btn {
+            font-family: inherit;
+            border: none;
+            padding: 8px 16px;
+            border-radius: 12px;
+            font-weight: bold;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            background: rgba(255, 255, 255, 0.8);
+            color: #333;
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.05);
+            min-width: fit-content;
+            line-height: 1.2;
+        }
+
+        .btn:hover {
+            background: #fff;
+            transform: translateY(-2px);
+        }
+
+        .btn-danger {
+            background: #ffcdd2;
+            color: #b71c1c;
+            border: 1px solid #e57373;
+        }
+        .btn-danger:hover {
+            background: #ef5350;
+            color: white;
+        }
+
+        .btn-success {
+            background: #c8e6c9;
+            color: #1b5e20;
+            border: 1px solid #81c784;
+        }
+        .btn-success:hover {
+            background: #66bb6a;
+            color: white;
+        }
+
+        /* スキル設定用ボタンスタイル */
+        .toggle-btn {
+            padding: 10px 20px;
+            border-radius: 10px;
+            border: 2px solid #ccc;
+            background: #eee;
+            cursor: pointer;
+            font-weight: bold;
+            transition: all 0.3s;
+        }
+        .toggle-btn.active {
+            background: #4caf50;
+            color: white;
+            border-color: #388e3c;
+        }
+
+        /* =========================================
+           メイン領域 (矢印 + テーブル)
+           ========================================= */
+        .main-area {
+            flex: 1;
+            min-height: 0;
+            padding: 10px;
+            display: flex;
+            align-items: center; gap: 10px;
+        }
+
+        .nav-btn {
+            width: 50px;
+            height: 50px;
+            border-radius: 50%;
+            border: 2px solid #000;
+            background: rgba(255, 255, 255, 0.7);
+            cursor: pointer;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            font-size: 24px;
+            transition: all 0.2s;
+            flex-shrink: 0;
+            z-index: 100;
+            box-shadow: 0 4px 10px rgba(0,0,0,0.1);
+        }
+
+        .nav-btn:hover {
+            background: #fff;
+            transform: scale(1.1);
+        }
+
+        .table-container {
+            flex: 1;
+            overflow: auto;
+            border-radius: 15px;
+            background: white;
+            border: 1px solid #000;
+            height: 100%;
+        }
+
+        /* =========================================
+           設定画面のスタイル
+           ========================================= */
+        .config-area {
+            padding: 20px;
+            display: flex;
+            flex-direction: column;
+            gap: 20px;
+            height: 100%;
+            overflow-y: auto;
+            background: #fff;
+        }
+
+        .config-card {
+            padding: 20px;
+            border-radius: 15px;
+            background: #f8f9fa;
+            border: 1px solid #ddd;
+        }
+
+        .config-grid {
+            display: grid;
+            grid-template-columns: 2fr 3fr;
+            gap: 20px;
+        }
+
+        .alias-table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 15px;
+        }
+
+        .alias-table th, .alias-table td {
+            padding: 10px;
+            border-bottom: 1px solid #eee;
+            text-align: left;
+        }
+
+        .alias-input-group {
+            display: flex;
+            gap: 8px;
+            align-items: center;
+            flex-wrap: nowrap; 
+        }
+
+        .alias-input, .date-input {
+            padding: 6px 12px;
+            border-radius: 6px;
+            border: 1px solid #ccc;
+            font-family: inherit;
+            font-size: 0.9rem;
+        }
+
+        .alias-tags {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 6px;
+        }
+
+        .alias-tag {
+            background: #e0e0e0;
+            padding: 4px 10px;
+            border-radius: 20px;
+            font-size: 0.85rem;
+            display: flex;
+            align-items: center;
+            gap: 6px;
+        }
+
+        .alias-tag.type-holiday { background: #ffdada; border: 1px solid #ff9999; }
+        .alias-tag.type-weekday { background: #e0f7fa; border: 1px solid #80deea; }
+
+        .alias-tag button {
+            background: #999;
+            color: white;
+            border: none;
+            width: 16px;
+            height: 16px;
+            border-radius: 50%;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            cursor: pointer;
+            font-size: 10px;
+            line-height: 1;
+        }
+
+        .alias-tag button:hover { background: #ff5252; }
+
+        /* =========================================
+           テーブル表示
+           ========================================= */
+        .schedule-table {
+            width: max-content;
+            min-width: 100%;
+            border-collapse: separate;
+            border-spacing: 0;
+            table-layout: fixed;
+        }
+
+        .schedule-table th, 
+        .schedule-table td {
+            padding: 8px;
+            border-right: 1px solid #000;
+            border-bottom: 1px solid #000;
+            font-size: 0.95rem;
+            width: 160px;
+            box-sizing: border-box;
+            background-color: #fff;
+        }
+
+        /* --- 見出しの固定設定 --- */
+        .row-header {
+            position: sticky;
+            left: 0;
+            z-index: 10;
+            background: #f0f0f0 !important;
+            font-weight: 700;
+            color: #000;
+            width: 100px !important; 
+            text-align: center;
+            border-right: 2px solid #000 !important;
+            font-size: 3rem; 
+        }
+
+        .h-std { height: 45px; }
+        .sticky-row-1 { position: sticky; top: 0; z-index: 20; background: #fff !important; font-size: 3rem; line-height: 1; }
+        .sticky-row-2 { position: sticky; top: 45px; z-index: 20; background: #fff !important; font-size: 3rem; line-height: 1; }
+
+        /* 反映選択行のスタイル */
+        .reflect-row { height: 40px; background: #fff9c4 !important; }
+        .reflect-sticky { position: sticky; left: 0; z-index: 10; background: #fff176 !important; border-right: 2px solid #000 !important; font-weight: bold; font-size: 0.9rem; text-align: center; }
+        .reflect-selector-cell { background: #fffde7 !important; text-align: center; padding: 4px !important; }
+        .reflect-select { font-family: inherit; padding: 2px 5px; border-radius: 5px; border: 1px solid #999; font-size: 0.85rem; cursor: pointer; }
+
+        .day-sat { background-color: #e3f2fd !important; }
+        .day-sun { background-color: #fce4ec !important; }
+
+        /* --- 入力エリア --- */
+        [contenteditable="true"] { outline: none; padding: 2px; min-height: 1.2em; display: block; width: 100%; box-sizing: border-box; }
+        [contenteditable="true"]:focus { background: #e8f0fe; }
+
+        .leave-input { width: 100%; border: none; outline: none; font-family: inherit; font-size: 1.1rem; padding: 2px; background: transparent; text-align: center; box-sizing: border-box; }
+        .text-center { text-align: center; }
+        .cell-content { display: flex; flex-direction: column; gap: 0; }
+        .subj-name { font-weight: bold; font-size: 1.1rem; color: #000; text-align: center; padding-bottom: 2px; white-space: nowrap; overflow: hidden; }
+        .subj-desc { font-size: 0.85rem; color: #444; line-height: 1.3; min-height: 2em; text-align: left; }
+
+        /* 報告書テーブル用スタイル */
+        .report-area { padding: 40px 20px; height: 100%; overflow-y: auto; background: white; box-sizing: border-box; display: flex; flex-direction: column; align-items: center; }
+        .report-content-wrapper { width: 100%; max-width: 1200px; position: relative; }
+        .report-header-title { text-align: center; font-size: 2.5rem; font-weight: bold; margin-bottom: 30px; border-bottom: 3px solid #000; padding-bottom: 10px; }
+        .grade-select { font-family: inherit; padding: 8px 16px; border-radius: 8px; border: 1px solid #000; font-size: 1.2rem; background: white; cursor: pointer; }
+
+        .report-table { width: 100%; border-collapse: collapse; border: 2px solid #000; table-layout: fixed; }
+        .report-table th, .report-table td { border: 1px solid #000; padding: 12px 5px; text-align: center; font-size: 1.2rem; }
+        
+        .report-table td:first-child {
+            font-size: 1rem;
+            line-height: 1.2;
+            word-wrap: break-word;
+            padding: 8px 4px;
+        }
+
+        .report-table thead th { background-color: #f8f9fa; font-weight: bold; }
+        .sub-header { font-size: 1rem !important; padding: 5px !important; background-color: #fff !important; }
+
+        @media (max-width: 800px) {
+            .schedule-table td { width: 130px; }
+            .row-header { width: 80px !important; font-size: 2rem; }
+            .report-header-title { font-size: 1.5rem; }
+            .report-table th, .report-table td { font-size: 0.9rem; }
+            .config-grid { grid-template-columns: 1fr !important; }
+        }
+
+        /* =========================================
+           印刷用スタイル
+           ========================================= */
+        @media print {
+            @page {
+                size: A4 portrait;
+                margin: 10mm;
+            }
+            body {
+                background: white !important;
+                min-height: auto;
+                display: block;
+            }
+            .app-wrapper {
+                width: 100%;
+                height: auto;
+                display: block;
+            }
+            .top-bar, .sub-tab-container, .nav-btn, .top-controls, .main-area {
+                display: none !important;
+            }
+            #report-container {
+                display: block !important;
+                background: white !important;
+                border: none !important;
+                box-shadow: none !important;
+                padding: 0 !important;
+                margin: 0 !important;
+                overflow: visible !important;
+            }
+            .report-content-wrapper {
+                max-width: 100% !important;
+            }
+            .report-header-title {
+                font-size: 20pt !important;
+                margin-bottom: 20px !important;
+            }
+            .report-table {
+                width: 100% !important;
+                border: 2px solid #000 !important;
+            }
+            .report-table th, .report-table td {
+                font-size: 10pt !important; 
+                padding: 8px 4px !important;
+                border: 1px solid #000 !important;
+                background-color: white !important;
+                color: black !important;
+            }
+            #report-class-name {
+                border-bottom: 1px dotted #333;
+            }
+        }
+    </style>
+</head>
+<body>
+
+<div class="app-wrapper">
+    <div class="top-bar">
+        <div class="tab-container">
+            <button class="tab-btn active" onclick="switchView('basic')" id="tab-basic">基本設定</button>
+            <button class="tab-btn" onclick="switchView('main')" id="tab-main">時間割</button>
+            <button class="tab-btn" onclick="switchView('monthly')" id="tab-monthly">月別報告</button>
+            <button class="tab-btn" onclick="switchView('report')" id="tab-report">報告書</button>
+        </div>
+        <div class="app-title" id="view-title">📅 基本設定 (全体設定)</div>
+        <div class="top-controls">
+            <button id="printBtn" class="btn glass-panel" style="display:none; margin-right:10px;">印刷する</button>
+        </div>
+    </div>
+
+    <!-- 基本設定用のサブタブ -->
+    <div class="sub-tab-container" id="basic-sub-tabs">
+        <button class="sub-tab-btn active" onclick="switchBasicTab('Settings')" id="btab-Settings">設定</button>
+        <button class="sub-tab-btn" onclick="switchBasicTab('A')" id="btab-A">時間割A</button>
+        <button class="sub-tab-btn" onclick="switchBasicTab('B')" id="btab-B">時間割B</button>
+        <button class="sub-tab-btn" onclick="switchBasicTab('C')" id="btab-C">時間割C</button>
+        <button class="sub-tab-btn" onclick="switchBasicTab('D')" id="btab-D">時間割D</button>
+    </div>
+
+    <!-- 月別報告用のサブタブ -->
+    <div class="sub-tab-container" id="monthly-sub-tabs" style="display:none;">
+        <button class="sub-tab-btn" onclick="switchMonth(4)" id="mtab-4">4月</button>
+        <button class="sub-tab-btn" onclick="switchMonth(5)" id="mtab-5">5月</button>
+        <button class="sub-tab-btn" onclick="switchMonth(6)" id="mtab-6">6月</button>
+        <button class="sub-tab-btn" onclick="switchMonth(7)" id="mtab-7">7月</button>
+        <button class="sub-tab-btn" onclick="switchMonth(8)" id="mtab-8">8月</button>
+        <button class="sub-tab-btn" onclick="switchMonth(9)" id="mtab-9">9月</button>
+        <button class="sub-tab-btn" onclick="switchMonth(10)" id="mtab-10">10月</button>
+        <button class="sub-tab-btn" onclick="switchMonth(11)" id="mtab-11">11月</button>
+        <button class="sub-tab-btn" onclick="switchMonth(12)" id="mtab-12">12月</button>
+        <button class="sub-tab-btn" onclick="switchMonth(1)" id="mtab-1">1月</button>
+        <button class="sub-tab-btn" onclick="switchMonth(2)" id="mtab-2">2月</button>
+        <button class="sub-tab-btn" onclick="switchMonth(3)" id="mtab-3">3月</button>
+    </div>
+
+    <div class="main-area" id="main-area-container">
+        <button id="prevBtn" class="nav-btn">◀</button>
+        <div class="table-container glass-panel" id="tableContainer"></div>
+        <button id="nextBtn" class="nav-btn">▶</button>
+    </div>
+
+    <!-- 報告書エリア（年間・月別共用） -->
+    <div id="report-container" class="report-area glass-panel" style="display:none; flex:1; margin:10px;">
+        <div class="report-content-wrapper">
+            <div class="report-header-title">
+                <span id="report-class-name" contenteditable="true" onblur="saveReportClass(this)">1年1組</span> <span id="report-title-type">集計報告書</span>
+            </div>
+            <table class="report-table">
+                <thead id="report-thead-yearly">
+                    <tr>
+                        <th rowspan="2" style="width:15%">教科等</th>
+                        <th colspan="2" style="width:20%">1学期</th>
+                        <th colspan="2" style="width:20%">2学期</th>
+                        <th colspan="2" style="width:20%">3学期</th>
+                        <th colspan="2" style="width:25%">年 間</th>
+                    </tr>
+                    <tr>
+                        <th class="sub-header">予定時数</th><th class="sub-header">実施時数</th>
+                        <th class="sub-header">予定時数</th><th class="sub-header">実施時数</th>
+                        <th class="sub-header">予定時数</th><th class="sub-header">実施時数</th>
+                        <th class="sub-header">予定時数</th><th class="sub-header">実施時数</th>
+                    </tr>
+                </thead>
+                <thead id="report-thead-monthly" style="display:none;">
+                    <tr>
+                        <th style="width:25%">教科等</th>
+                        <th style="width:25%">実施時数</th>
+                        <th style="width:25%" id="monthly-term-actual-label">1学期実施時数</th>
+                        <th style="width:25%" id="monthly-term-planned-label">1学期予定時数</th>
+                    </tr>
+                </thead>
+                <tbody id="report-tbody"></tbody>
+                <tfoot><tr id="report-total-row" style="background:#f0f0f0; font-weight:bold;"></tr></tfoot>
+            </table>
+        </div>
+    </div>
+
+    <datalist id="leave-times"></datalist>
+    <input type="file" id="backup-upload" style="display:none" accept=".json" onchange="importFromJSON(this)">
+</div>
+
+<script>
+    /* =========================================
+       1. データの管理
+       ========================================= */
+    const STORAGE_KEY = 'lessonSchedule_v10_restore';
+    const BASIC_STORAGE_KEY_PREFIX = 'lessonSchedule_basic_v3_';
+    const PLANNED_STORAGE_KEY = 'lessonSchedule_planned_v3';
+    const REPORT_CLASS_KEY = 'lessonSchedule_reportClass_v3';
+    const REPORT_GRADE_KEY = 'lessonSchedule_reportGrade_v3';
+    const ALIASES_KEY = 'lessonSchedule_aliases_v2';
+    const CUSTOM_HOLIDAYS_KEY = 'lessonSchedule_customHolidays_v1';
+    const CUSTOM_WEEKDAYS_KEY = 'lessonSchedule_customWeekdays_v1';
+    const INCLUDE_SKILL_KEY = 'lessonSchedule_includeSkill_v1';
+
+    const HOLIDAYS_2026 = {
+        "1/1": "元日", "1/12": "成人の日", "2/11": "建国記念の日", "2/23": "天皇誕生日",
+        "3/20": "春分の日", "4/29": "昭和の日", "5/3": "憲法記念日", "5/4": "みどりの日",
+        "5/5": "こどもの日", "5/6": "振替休日", "7/20": "海の日", "8/11": "山の日",
+        "9/21": "敬老の日", "9/22": "国民の休日", "9/23": "秋分の日", "10/12": "スポーツの日",
+        "11/3": "文化の日", "11/23": "勤労感謝の日"
+    };
+
+    const GRADE_SUBJECTS = {
+        '1': ['国語', '算数', '生活', '音楽', '図画工作', '体育', '特別の教科　道徳', '特別活動', '行事'],
+        '2': ['国語', '算数', '生活', '音楽', '図画工作', '体育', '特別の教科　道徳', '特別活動', '行事'],
+        '3': ['国語', '社会', '算数', '理科', '音楽', '図画工作', '体育', '特別の教科　道徳', '特別活動', '総合的な学習の時間', '外国語活動', '行事'],
+        '4': ['国語', '社会', '算数', '理科', '音楽', '図画工作', '体育', '特別の教科　道徳', '特別活動', '総合的な学習の時間', '外国語活動', 'クラブ', '行事'],
+        '5': ['国語', '社会', '算数', '理科', '音楽', '図画工作', '家庭', '体育', '特別の教科　道徳', '特別活動', '総合的な学習の時間', '外国語', '委員会', 'クラブ', '行事'],
+        '6': ['国語', '社会', '算数', '理科', '音楽', '図画工作', '家庭', '体育', '特別の教科　道徳', '特別活動', '総合的な学習の時間', '外国語', '委員会', 'クラブ', '行事']
+    };
+
+    const DEFAULT_ALIASES = {
+        '国語': ['書写', '読書'],
+        '図画工作': ['図工'],
+        '特別活動': ['特活', '学活'],
+        '外国語活動': ['外国語', '英語', '英会話'],
+        '総合的な学習の時間': ['総合', '総合的な学習'],
+        '外国語': ['英語'],
+        '特別の教科　道徳': ['道徳']
+    };
+
+    const DEFAULT_PLANNED_DATA = {
+        '1': { '国語': [108,117,81], '算数': [48,52,36], '生活': [36,39,27], '音楽': [24,26,18], '図画工作': [24,26,18], '体育': [36,39,27], '特別の教科　道徳': [12,13,9], '特別活動': [12,13,9] },
+        '2': { '国語': [117,117,81], '算数': [60,65,45], '生活': [36,39,27], '音楽': [26,26,18], '図画工作': [26,26,18], '体育': [36,39,27], '特別の教科　道徳': [13,13,9], '特別活動': [13,13,9] },
+        '3': { '国語': [91,91,63], '社会': [26,26,18], '算数': [60,65,45], '理科': [30,31,21], '音楽': [22,22,15], '図画工作': [22,22,15], '体育': [36,39,27], '特別の教科　道徳': [13,13,9], '総合的な学習の時間': [26,26,18], '特別活動': [13,13,9], '外国語活動': [13,13,9] },
+        '4': { '国語': [91,91,63], '社会': [33,33,23], '算数': [60,65,45], '理科': [33,34,23], '音楽': [22,22,15], '図画工作': [22,22,15], '体育': [36,39,27], '特別の教科　道徳': [13,13,9], '総合的な学習の時間': [26,26,18], '特別活動': [13,13,9], '外国語活動': [13,13,9] },
+        '5': { '国語': [65,65,45], '社会': [33,34,23], '算数': [60,65,45], '理科': [36,39,27], '音楽': [18,18,12], '図画工作': [18,18,12], '家庭': [22,22,15], '体育': [33,34,23], '外国語': [22,22,15], '特別の教科　道徳': [13,13,9], '総合的な学習の時間': [26,26,18], '特別活動': [13,13,9] },
+        '6': { '国語': [65,65,45], '社会': [36,39,27], '算数': [60,65,45], '理科': [36,39,27], '音楽': [18,18,12], '図画工作': [18,18,12], '家庭': [18,19,13], '体育': [33,34,23], '外国語': [22,22,15], '特別の教科　道徳': [13,13,9], '総合的な学習の時間': [26,26,18], '特別活動': [13,13,9] }
+    };
+
+    let scheduleData = JSON.parse(localStorage.getItem(STORAGE_KEY)) || [];
+    let basicSchedules = {
+        A: JSON.parse(localStorage.getItem(BASIC_STORAGE_KEY_PREFIX + 'A')) || [],
+        B: JSON.parse(localStorage.getItem(BASIC_STORAGE_KEY_PREFIX + 'B')) || [],
+        C: JSON.parse(localStorage.getItem(BASIC_STORAGE_KEY_PREFIX + 'C')) || [],
+        D: JSON.parse(localStorage.getItem(BASIC_STORAGE_KEY_PREFIX + 'D')) || []
+    };
+
+    const allMasterSubjects = ['国語', '社会', '算数', '理科', '生活', '音楽', '図画工作', '家庭', '体育', '外国語', '外国語活動', '特別の教科　道徳', '総合的な学習の時間', '特別活動', '委員会', 'クラブ', '行事', '書写', '英会話'];
+    let plannedData = JSON.parse(localStorage.getItem(PLANNED_STORAGE_KEY)) || {};
+    allMasterSubjects.forEach(s => { if (!plannedData[s]) plannedData[s] = { t1: 0, t2: 0, t3: 0 }; });
+
+    let subjectAliases = JSON.parse(localStorage.getItem(ALIASES_KEY)) || {};
+    allMasterSubjects.forEach(s => { if (!subjectAliases[s]) { subjectAliases[s] = DEFAULT_ALIASES[s] || []; } });
+
+    let customHolidays = JSON.parse(localStorage.getItem(CUSTOM_HOLIDAYS_KEY)) || [];
+    let customWeekdays = JSON.parse(localStorage.getItem(CUSTOM_WEEKDAYS_KEY)) || [];
+    let includeSkill = JSON.parse(localStorage.getItem(INCLUDE_SKILL_KEY)) || false;
+
+    let currentStartIndex = 0, activeView = 'basic', activeBasicTab = 'Settings', activeMonth = 4;
+    const getVisibleDaysCount = () => window.innerWidth <= 800 ? 7 : 14;
+
+    function initDay(dateStr, dayStr, dayIdx) {
+        const holidayName = HOLIDAYS_2026[dateStr] || "";
+        return { 
+            date: dateStr, 
+            day: dayStr, 
+            dayIndex: dayIdx, 
+            skill: "", 
+            morning: "", 
+            leave: "", 
+            event: holidayName, 
+            items: "", 
+            periods: Array.from({length: 6}, () => ({ s: "", c: "" })), 
+            appliedTemplate: "none", 
+            manual: holidayName ? { event: true } : {} 
+        };
+    }
+
+    if (scheduleData.length === 0) {
+        const startDate = new Date(2026, 2, 2);
+        for (let i = 0; i < 56; i++) {
+            const d = new Date(startDate); d.setDate(startDate.getDate() + i);
+            scheduleData.push(initDay(`${d.getMonth() + 1}/${d.getDate()}`, ["日","月","火","水","木","金","土"][d.getDay()], d.getDay()));
+        }
+    }
+
+    scheduleData.forEach(day => {
+        const holidayName = HOLIDAYS_2026[day.date];
+        if (holidayName && (!day.event || day.event === "")) {
+            day.event = holidayName;
+        }
+    });
+
+    ['A', 'B', 'C', 'D'].forEach(key => {
+        if (basicSchedules[key].length === 0) {
+            for (let i = 0; i < 7; i++) basicSchedules[key].push(initDay("設定", ["月","火","水","木","金","土","日"][i], [1,2,3,4,5,6,0][i]));
+        }
+    });
+
+    function save() { localStorage.setItem(STORAGE_KEY, JSON.stringify(scheduleData)); }
+    function saveBasic(key) { localStorage.setItem(BASIC_STORAGE_KEY_PREFIX + key, JSON.stringify(basicSchedules[key])); }
+    function savePlanned() { localStorage.setItem(PLANNED_STORAGE_KEY, JSON.stringify(plannedData)); }
+    function saveAliases() { localStorage.setItem(ALIASES_KEY, JSON.stringify(subjectAliases)); }
+    function saveSpecialDays() {
+        localStorage.setItem(CUSTOM_HOLIDAYS_KEY, JSON.stringify(customHolidays));
+        localStorage.setItem(CUSTOM_WEEKDAYS_KEY, JSON.stringify(customWeekdays));
+    }
+    function saveSkillSetting() { localStorage.setItem(INCLUDE_SKILL_KEY, JSON.stringify(includeSkill)); }
+
+    /* =========================================
+       2. レンダリング
+       ========================================= */
+    function render() {
+        const container = document.getElementById('tableContainer');
+        const mainArea = document.getElementById('main-area-container');
+        const reportArea = document.getElementById('report-container');
+        const prevBtn = document.getElementById('prevBtn');
+        const nextBtn = document.getElementById('nextBtn');
+        const basicSubTabs = document.getElementById('basic-sub-tabs');
+        const monthlySubTabs = document.getElementById('monthly-sub-tabs');
+        const titleEl = document.getElementById('view-title');
+        const printBtn = document.getElementById('printBtn');
+        
+        if (activeView === 'report' || activeView === 'monthly') {
+            printBtn.style.display = 'inline-block';
+        } else {
+            printBtn.style.display = 'none';
+        }
+
+        if (activeView === 'report') {
+            mainArea.style.display = 'none'; reportArea.style.display = 'flex'; 
+            basicSubTabs.style.display = 'none'; monthlySubTabs.style.display = 'none';
+            titleEl.innerText = "📅 年間集計報告書";
+            document.getElementById('report-title-type').innerText = "年間集計報告書";
+            document.getElementById('report-thead-yearly').style.display = 'table-header-group';
+            document.getElementById('report-thead-monthly').style.display = 'none';
+            renderReport(); return;
+        }
+
+        if (activeView === 'monthly') {
+            mainArea.style.display = 'none'; reportArea.style.display = 'flex'; 
+            basicSubTabs.style.display = 'none'; monthlySubTabs.style.display = 'flex';
+            titleEl.innerText = `📅 月別報告 (${activeMonth}月)`;
+            document.getElementById('report-title-type').innerText = `${activeMonth}月 集計報告書`;
+            document.getElementById('report-thead-yearly').style.display = 'none';
+            document.getElementById('report-thead-monthly').style.display = 'table-header-group';
+            renderMonthlyReport(); return;
+        }
+
+        mainArea.style.display = 'flex'; reportArea.style.display = 'none';
+        
+        if (activeView === 'basic') {
+            prevBtn.style.visibility = 'hidden'; nextBtn.style.visibility = 'hidden'; 
+            basicSubTabs.style.display = 'flex'; monthlySubTabs.style.display = 'none';
+            if (activeBasicTab === 'Settings') {
+                titleEl.innerText = "📅 基本設定 (全体設定)";
+                renderSettings(container);
+            } else {
+                titleEl.innerText = `📅 基本設定 (時間割${activeBasicTab})`;
+                renderTable(container);
+            }
+        } else {
+            prevBtn.style.visibility = 'visible'; nextBtn.style.visibility = 'visible'; 
+            basicSubTabs.style.display = 'none'; monthlySubTabs.style.display = 'none';
+            titleEl.innerText = "📅 時間割";
+            renderTable(container);
+        }
+    }
+
+    function formatSubjectForDisplay(s) {
+        if (s === '特別の教科　道徳') return '特別の教科<br>道徳';
+        if (s === '総合的な学習の時間') return '総合的な<br>学習の時間';
+        return s;
+    }
+
+    function renderSettings(container) {
+        const currentGrade = localStorage.getItem(REPORT_GRADE_KEY) || "1";
+        const activeSubjs = GRADE_SUBJECTS[currentGrade] || allMasterSubjects;
+
+        let html = `
+            <div class="config-area">
+                <div class="config-grid">
+                    <div class="config-card">
+                        <h3>学年の設定</h3>
+                        <p>学年を選択すると、報告書の構成と予定時数が更新されます。</p>
+                        <select id="config-grade-select" class="grade-select" onchange="changeReportGrade(this.value)">
+                        ${[1,2,3,4,5,6].map(g => `<option value="${g}" ${currentGrade == g ? 'selected' : ''}>${g}年</option>`).join('')}
+                        </select>
+                    </div>
+
+                    <div class="config-card">
+                        <h3>特別日の設定</h3>
+                        <p>振替休日や参観日を設定できます。</p>
+                        <div class="alias-input-group" style="margin-bottom:10px;">
+                            <input type="date" class="date-input" id="special-date-picker">
+                            <button class="btn" style="background:#ffdada" onclick="addSpecialDay('holiday')">休日に<br>する</button>
+                            <button class="btn" style="background:#e0f7fa" onclick="addSpecialDay('weekday')">平日に<br>する</button>
+                        </div>
+                        <div class="alias-tags">
+                            ${customHolidays.map(d => `<span class="alias-tag type-holiday">${d} (休) <button onclick="removeSpecialDay('holiday','${d}')">×</button></span>`).join('')}
+                            ${customWeekdays.map(d => `<span class="alias-tag type-weekday">${d} (平) <button onclick="removeSpecialDay('weekday','${d}')">×</button></span>`).join('')}
+                        </div>
+                    </div>
+
+                    <div class="config-card" style="grid-column: span 2;">
+                        <h3>スキル時間の集計設定</h3>
+                        <p>時間割の「スキル」欄に入力した教科を、0.2時間として時数に含めるかどうか設定できます。</p>
+                        <button class="toggle-btn ${includeSkill ? 'active' : ''}" onclick="toggleSkillSetting()">
+                            ${includeSkill ? '✅ 現在：スキル時間を時数に含める' : '❌ 現在：スキル時間を時数に含めない'}
+                        </button>
+                    </div>
+                </div>
+
+                <div class="config-card">
+                    <h3>教科の別名設定（集計用）</h3>
+                    <p>時間割に入力した特定の名前を、どの教科として集計するか設定できます。</p>
+                    <table class="alias-table">
+                        <thead><tr><th>教科名</th><th>別名の登録<br>（Enterで追加）</th><th>登録済みの別名</th></tr></thead>
+                        <tbody>`;
+        activeSubjs.forEach(s => {
+            const aliases = subjectAliases[s] || [];
+            html += `<tr><td style="font-weight:bold; width:120px;">${formatSubjectForDisplay(s)}</td><td style="width:200px;"><div class="alias-input-group"><input type="text" class="alias-input" placeholder="別名を入力..." onkeydown="if(event.key==='Enter') addAlias('${s}', this)"></div></td><td><div class="alias-tags">${aliases.map(a => `<span class="alias-tag">${a}<button onclick="removeAlias('${s}', '${a}')">×</button></span>`).join('')}</div></td></tr>`;
+        });
+        html += `</tbody></table></div>
+                
+                <div class="config-card">
+                    <h3>データ管理（バックアップ）</h3>
+                    <p>データをファイルとして保存したり、読み込んだりできます。</p>
+                    <div class="alias-input-group" style="gap:15px; margin-top:10px;">
+                        <button class="btn btn-success" onclick="exportToCSV()">CSV出力 (スプレッドシート用)</button>
+                        <button class="btn" onclick="exportToJSON()">アプリ用バックアップ保存</button>
+                        <button class="btn" onclick="document.getElementById('backup-upload').click()">バックアップを読み込む</button>
+                    </div>
+                    <hr style="margin:20px 0; border:0; border-top:1px solid #ddd;">
+                    <p style="color:#b71c1c; font-size:0.85rem;">※ 「全て消去」を実行すると、設定を含むすべての内容が消えます。</p>
+                    <button class="btn btn-danger" onclick="resetAllData()">全て消去</button>
+                </div>
+            </div>`;
+        container.innerHTML = html;
+    }
+
+    /* =========================================
+       バックアップ機能の実装
+       ========================================= */
+    // スプレッドシート用CSV出力
+    window.exportToCSV = () => {
+        let csvContent = "\uFEFF"; // Excel用BOM
+        csvContent += "日付,曜日,スキル,朝の会,1校時,2校時,3校時,4校時,5校時,6校時,下校,行事,持ち物\n";
+        
+        scheduleData.forEach(day => {
+            let row = [
+                day.date,
+                day.day,
+                day.skill,
+                day.morning,
+                ...day.periods.map(p => `${p.s}${p.c ? ' (' + p.c + ')' : ''}`),
+                day.leave,
+                day.event,
+                day.items
+            ].map(v => `"${(v || "").replace(/"/g, '""')}"`).join(",");
+            csvContent += row + "\n";
+        });
+
+        const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+        const link = document.createElement("a");
+        link.href = URL.createObjectURL(blob);
+        link.setAttribute("download", `時数管理データ_${new Date().toLocaleDateString()}.csv`);
+        link.click();
+    };
+
+    // JSON形式での完全バックアップ保存
+    window.exportToJSON = () => {
+        const backupData = {
+            version: "1.0",
+            scheduleData,
+            basicSchedules,
+            plannedData,
+            subjectAliases,
+            customHolidays,
+            customWeekdays,
+            includeSkill,
+            reportClass: localStorage.getItem(REPORT_CLASS_KEY),
+            reportGrade: localStorage.getItem(REPORT_GRADE_KEY)
+        };
+
+        const blob = new Blob([JSON.stringify(backupData, null, 2)], { type: 'application/json' });
+        const link = document.createElement("a");
+        link.href = URL.createObjectURL(blob);
+        link.setAttribute("download", `時数管理バックアップ_${new Date().toLocaleDateString()}.json`);
+        link.click();
+    };
+
+    // バックアップファイルの読み込み
+    window.importFromJSON = (input) => {
+        const file = input.files[0];
+        if (!file) return;
+
+        const reader = new FileReader();
+        reader.onload = (e) => {
+            try {
+                const data = JSON.parse(e.target.result);
+                if (confirm("バックアップを読み込みますか？現在のデータは上書きされます。")) {
+                    scheduleData = data.scheduleData || scheduleData;
+                    basicSchedules = data.basicSchedules || basicSchedules;
+                    plannedData = data.plannedData || plannedData;
+                    subjectAliases = data.subjectAliases || subjectAliases;
+                    customHolidays = data.customHolidays || customHolidays;
+                    customWeekdays = data.customWeekdays || customWeekdays;
+                    includeSkill = data.includeSkill !== undefined ? data.includeSkill : includeSkill;
+                    
+                    if (data.reportClass) localStorage.setItem(REPORT_CLASS_KEY, data.reportClass);
+                    if (data.reportGrade) localStorage.setItem(REPORT_GRADE_KEY, data.reportGrade);
+
+                    save();
+                    saveBasic('A'); saveBasic('B'); saveBasic('C'); saveBasic('D');
+                    savePlanned();
+                    saveAliases();
+                    saveSpecialDays();
+                    saveSkillSetting();
+
+                    alert("バックアップを正常に読み込みました。");
+                    location.reload();
+                }
+            } catch (err) {
+                alert("ファイルの読み込みに失敗しました。正しいバックアップファイルを選択してください。");
+            }
+        };
+        reader.readAsText(file);
+    };
+
+    function toggleSkillSetting() {
+        includeSkill = !includeSkill;
+        saveSkillSetting();
+        render();
+    }
+
+    function addAlias(subj, input) {
+        const val = input.value.trim();
+        if (!val) return;
+        if (!subjectAliases[subj]) subjectAliases[subj] = [];
+        if (!subjectAliases[subj].includes(val)) { subjectAliases[subj].push(val); saveAliases(); render(); }
+        input.value = '';
+    }
+
+    function removeAlias(subj, val) {
+        if (subjectAliases[subj]) { subjectAliases[subj] = subjectAliases[subj].filter(a => a !== val); saveAliases(); render(); }
+    }
+
+    function addSpecialDay(type) {
+        const picker = document.getElementById('special-date-picker');
+        const rawDate = picker.value;
+        if (!rawDate) return;
+        const dObj = new Date(rawDate);
+        const formatted = `${dObj.getMonth() + 1}/${dObj.getDate()}`;
+        if (type === 'holiday') {
+            if (!customHolidays.includes(formatted)) customHolidays.push(formatted);
+            customWeekdays = customWeekdays.filter(d => d !== formatted);
+        } else {
+            if (!customWeekdays.includes(formatted)) customWeekdays.push(formatted);
+            customHolidays = customHolidays.filter(d => d !== formatted);
+        }
+        saveSpecialDays(); render();
+    }
+
+    function removeSpecialDay(type, val) {
+        if (type === 'holiday') customHolidays = customHolidays.filter(d => d !== val);
+        else customWeekdays = customWeekdays.filter(d => d !== val);
+        saveSpecialDays(); render();
+    }
+
+    function renderTable(container) {
+        const isBasic = (activeView === 'basic');
+        const visibleDays = getVisibleDaysCount();
+        let displayData = isBasic ? basicSchedules[activeBasicTab] : scheduleData.slice(currentStartIndex, currentStartIndex + visibleDays);
+
+        if (!displayData || displayData.length === 0) {
+            container.innerHTML = `<div style="padding:20px; text-align:center;">データがありません。ページを戻るか更新してください。</div>`;
+            return;
+        }
+
+        let html = `<table class="schedule-table"><tbody>`;
+        if (!isBasic) {
+            html += `<tr class="reflect-row"><th class="reflect-sticky">反映時間割</th>`;
+            for(let w = 0; w < displayData.length / 7; w++) {
+                const currentTemplate = displayData[w * 7].appliedTemplate || 'none';
+                html += `<td colspan="7" class="reflect-selector-cell">この週に反映：<select class="reflect-select" onchange="applyTemplate(${w}, this.value)">
+                    <option value="none" ${currentTemplate === 'none' ? 'selected' : ''}>なし</option>
+                    <option value="A" ${currentTemplate === 'A' ? 'selected' : ''}>時間割A</option>
+                    <option value="B" ${currentTemplate === 'B' ? 'selected' : ''}>時間割B</option>
+                    <option value="C" ${currentTemplate === 'C' ? 'selected' : ''}>時間割C</option>
+                    <option value="D" ${currentTemplate === 'D' ? 'selected' : ''}>時間割D</option>
+                </select></td>`;
+            }
+            html += `</tr>`;
+        }
+
+        const rows = [
+            {k:"date", l:"日付", h:true, s:1}, {k:"day", l:"曜日", h:true, s:2},
+            {k:"skill", l:"スキル"}, {k:"morning", l:"朝の会"},
+            {k:"p1", l:"1"}, {k:"p2", l:"2"}, {k:"p3", l:"3"}, {k:"p4", l:"4"}, {k:"p5", l:"5"}, {k:"p6", l:"6"},
+            {k:"leave", l:"下校"}, {k:"event", l:"行事"}, {k:"items", l:"持ち物"}
+        ];
+
+        rows.forEach(row => {
+            html += `<tr class="${row.h ? 'h-std' : ''}"><th class="row-header ${row.h ? 'sticky-row-'+row.s : ''}">${row.l}</th>`;
+            displayData.forEach((d, i) => {
+                const isNationalHoliday = HOLIDAYS_2026[d.date];
+                const isCustomHoliday = customHolidays.includes(d.date);
+                const isCustomWeekday = customWeekdays.includes(d.date);
+                let cls = '';
+                if (isCustomWeekday) cls = '';
+                else if (d.dayIndex === 0 || isNationalHoliday || isCustomHoliday) cls = 'day-sun';
+                else if (d.dayIndex === 6) cls = 'day-sat';
+                
+                if (row.k.startsWith('p')) {
+                    const pIdx = parseInt(row.k[1]) - 1;
+                    html += `<td class="${cls}"><div class="cell-content">
+                        <div class="subj-name" contenteditable="true" onblur="updatePeriodCell(${i}, ${pIdx}, 's', this)">${d.periods[pIdx].s}</div>
+                        <div class="subj-desc" contenteditable="true" onblur="updatePeriodCell(${i}, ${pIdx}, 'c', this)">${d.periods[pIdx].c}</div>
+                    </div></td>`;
+                } else if (row.k === 'leave') {
+                    html += `<td class="${cls}"><input list="leave-times" value="${d[row.k]}" class="leave-input" onblur="handleLeaveBlur(${i}, this)"></td>`;
+                } else if (row.h) {
+                    html += `<td class="${cls} ${row.h ? 'sticky-row-'+row.s : ''} text-center" style="font-size:1.6em">${d[row.k]}</td>`;
+                } else {
+                    html += `<td class="${cls}"><div contenteditable="true" class="text-center" onblur="updateCell(${i}, '${row.k}', this)">${d[row.k]}</div></td>`;
+                }
+            });
+            html += `</tr>`;
+        });
+        container.innerHTML = html + `</tbody></table>`;
+    }
+
+    function renderReport() {
+        const currentGrade = localStorage.getItem(REPORT_GRADE_KEY) || "1";
+        const savedClassName = localStorage.getItem(REPORT_CLASS_KEY) || (currentGrade + "年1組");
+        document.getElementById('report-class-name').innerText = savedClassName;
+        const tbody = document.getElementById('report-tbody');
+        const actualHours = calculateActualHours();
+        const activeSubjects = GRADE_SUBJECTS[currentGrade] || allMasterSubjects;
+        let html = '', totals = { p1:0, a1:0, p2:0, a2:0, p3:0, a3:0, py:0, ay:0 };
+        activeSubjects.forEach(s => {
+            const p = plannedData[s] || { t1:0, t2:0, t3:0 };
+            const a = actualHours[s] || { t1:0, t2:0, t3:0 };
+            const py = p.t1 + p.t2 + p.t3, ay = a.t1 + a.t2 + a.t3;
+            totals.p1 += p.t1; totals.a1 += a.t1; totals.p2 += p.t2; totals.a2 += a.t2; totals.p3 += p.t3; totals.a3 += a.t3; totals.py += py; totals.ay += ay;
+            html += `<tr><td><strong>${formatSubjectForDisplay(s)}</strong></td><td contenteditable="true" onblur="updatePlanned('${s}','t1',this)">${p.t1}</td><td>${a.t1.toFixed(1)}</td><td contenteditable="true" onblur="updatePlanned('${s}','t2',this)">${p.t2}</td><td>${a.t2.toFixed(1)}</td><td contenteditable="true" onblur="updatePlanned('${s}','t3',this)">${p.t3}</td><td>${a.t3.toFixed(1)}</td><td>${py}</td><td>${ay.toFixed(1)}</td></tr>`;
+        });
+        tbody.innerHTML = html;
+        document.getElementById('report-total-row').innerHTML = `<td>合計</td><td>${totals.p1}</td><td>${totals.a1.toFixed(1)}</td><td>${totals.p2}</td><td>${totals.a2.toFixed(1)}</td><td>${totals.p3}</td><td>${totals.a3.toFixed(1)}</td><td>${totals.py}</td><td>${totals.ay.toFixed(1)}</td>`;
+    }
+
+    function renderMonthlyReport() {
+        const currentGrade = localStorage.getItem(REPORT_GRADE_KEY) || "1";
+        const savedClassName = localStorage.getItem(REPORT_CLASS_KEY) || (currentGrade + "年1組");
+        document.getElementById('report-class-name').innerText = savedClassName;
+        
+        let termKey = 't1', termName = '1学期';
+        if (activeMonth >= 4 && activeMonth <= 7) { termKey = 't1'; termName = '1学期'; }
+        else if (activeMonth >= 8 && activeMonth <= 12) { termKey = 't2'; termName = '2学期'; }
+        else { termKey = 't3'; termName = '3学期'; }
+
+        document.getElementById('monthly-term-actual-label').innerText = `${termName}実施時数`;
+        document.getElementById('monthly-term-planned-label').innerText = `${termName}予定時数`;
+
+        const tbody = document.getElementById('report-tbody');
+        const monthlyActual = calculateMonthlyActualHours(activeMonth); 
+        const yearlyActualByTerm = calculateActualHours(); 
+        const activeSubjects = GRADE_SUBJECTS[currentGrade] || allMasterSubjects;
+        
+        let html = '', totalM = 0, totalT = 0, totalP = 0;
+        activeSubjects.forEach(s => {
+            const m = monthlyActual[s] || 0; 
+            const t = (yearlyActualByTerm[s] ? yearlyActualByTerm[s][termKey] : 0); 
+            const p = (plannedData[s] ? plannedData[s][termKey] : 0); 
+            
+            totalM += m; totalT += t; totalP += p;
+            html += `<tr>
+                <td><strong>${formatSubjectForDisplay(s)}</strong></td>
+                <td>${m.toFixed(1)}</td>
+                <td>${t.toFixed(1)}</td>
+                <td>${p}</td>
+            </tr>`;
+        });
+        tbody.innerHTML = html;
+        document.getElementById('report-total-row').innerHTML = `
+            <td>合計</td>
+            <td>${totalM.toFixed(1)}</td>
+            <td>${totalT.toFixed(1)}</td>
+            <td>${totalP}</td>
+        `;
+    }
+
+    function calculateActualHours() {
+        const result = {}; allMasterSubjects.forEach(s => result[s] = { t1: 0, t2: 0, t3: 0 });
+        scheduleData.forEach(day => {
+            const parts = day.date.split('/');
+            if (parts.length < 2) return;
+            const month = parseInt(parts[0]);
+            let term = (month >= 4 && month <= 7) ? 't1' : (month >= 8 && month <= 12) ? 't2' : 't3';
+            
+            day.periods.forEach(p => {
+                const sName = p.s.trim();
+                if (!sName) return;
+                if (allMasterSubjects.includes(sName)) { result[sName][term] += 1; return; }
+                for (const mainSubj in subjectAliases) { if (subjectAliases[mainSubj].includes(sName)) { result[mainSubj][term] += 1; break; } }
+            });
+
+            if (includeSkill) {
+                const skillName = day.skill.trim();
+                if (skillName) {
+                    let targetSubj = null;
+                    if (allMasterSubjects.includes(skillName)) targetSubj = skillName;
+                    else {
+                        for (const mainSubj in subjectAliases) { if (subjectAliases[mainSubj].includes(skillName)) { targetSubj = mainSubj; break; } }
+                    }
+                    if (targetSubj) result[targetSubj][term] += 0.2;
+                }
+            }
+        });
+        return result;
+    }
+
+    function calculateMonthlyActualHours(month) {
+        const result = {}; allMasterSubjects.forEach(s => result[s] = 0);
+        scheduleData.forEach(day => {
+            const parts = day.date.split('/');
+            if (parts.length < 2 || parseInt(parts[0]) !== month) return;
+            
+            day.periods.forEach(p => {
+                const sName = p.s.trim();
+                if (!sName) return;
+                if (allMasterSubjects.includes(sName)) { result[sName] += 1; return; }
+                for (const mainSubj in subjectAliases) { if (subjectAliases[mainSubj].includes(sName)) { result[mainSubj] += 1; break; } }
+            });
+
+            if (includeSkill) {
+                const skillName = day.skill.trim();
+                if (skillName) {
+                    let targetSubj = null;
+                    if (allMasterSubjects.includes(skillName)) targetSubj = skillName;
+                    else {
+                        for (const mainSubj in subjectAliases) { if (subjectAliases[mainSubj].includes(skillName)) { targetSubj = mainSubj; break; } }
+                    }
+                    if (targetSubj) result[targetSubj] += 0.2;
+                }
+            }
+        });
+        return result;
+    }
+
+    /* =========================================
+       3. インタラクション
+       ========================================= */
+    window.changeReportGrade = (grade) => {
+        localStorage.setItem(REPORT_GRADE_KEY, grade);
+        const newClassName = grade + "年1組";
+        localStorage.setItem(REPORT_CLASS_KEY, newClassName);
+        const defaults = DEFAULT_PLANNED_DATA[grade];
+        if (defaults) {
+            allMasterSubjects.forEach(s => { plannedData[s] = { t1: 0, t2: 0, t3: 0 }; });
+            Object.keys(defaults).forEach(s => { const vals = defaults[s]; plannedData[s] = { t1: vals[0], t2: vals[1], t3: vals[2] }; });
+            savePlanned(); render();
+        }
+    };
+
+    window.switchView = (v) => { 
+        activeView = v; 
+        document.getElementById('tab-main').classList.toggle('active', v === 'main');
+        document.getElementById('tab-basic').classList.toggle('active', v === 'basic');
+        document.getElementById('tab-monthly').classList.toggle('active', v === 'monthly');
+        document.getElementById('tab-report').classList.toggle('active', v === 'report');
+        render(); 
+    };
+
+    window.switchBasicTab = (tab) => {
+        activeBasicTab = tab;
+        ['Settings','A','B','C','D'].forEach(k => {
+            const btn = document.getElementById('btab-' + k);
+            if (btn) btn.classList.toggle('active', k === tab);
+        });
+        render();
+    };
+
+    window.switchMonth = (m) => {
+        activeMonth = m;
+        const months = [4,5,6,7,8,9,10,11,12,1,2,3];
+        months.forEach(num => {
+            const btn = document.getElementById('mtab-' + num);
+            if (btn) btn.classList.toggle('active', num === m);
+        });
+        render();
+    };
+
+    window.updateCell = (idx, k, el) => {
+        const data = (activeView === 'basic' ? basicSchedules[activeBasicTab] : scheduleData.slice(currentStartIndex))[idx];
+        if (!data) return;
+        data[k] = el.innerText; if(activeView !== 'basic') { if(!data.manual) data.manual={}; data.manual[k] = true; }
+        activeView === 'basic' ? saveBasic(activeBasicTab) : save();
+    };
+    window.updatePeriodCell = (idx, pIdx, k, el) => {
+        const data = (activeView === 'basic' ? basicSchedules[activeBasicTab] : scheduleData.slice(currentStartIndex))[idx];
+        if (!data) return;
+        data.periods[pIdx][k] = el.innerText; if(activeView !== 'basic') { if(!data.manual) data.manual={}; data.manual[`p${pIdx}_${k}`] = true; }
+        activeView === 'basic' ? saveBasic(activeBasicTab) : save();
+    };
+    window.handleLeaveBlur = (idx, el) => {
+        const data = (activeView === 'basic' ? basicSchedules[activeBasicTab] : scheduleData.slice(currentStartIndex))[idx];
+        if (!data) return;
+        data.leave = el.value; if(activeView !== 'basic') { if(!data.manual) data.manual={}; data.manual.leave = true; }
+        activeView === 'basic' ? saveBasic(activeBasicTab) : save();
+    };
+    window.saveReportClass = (el) => { localStorage.setItem(REPORT_CLASS_KEY, el.innerText); };
+    window.updatePlanned = (s, t, el) => { plannedData[s][t] = parseFloat(el.innerText) || 0; savePlanned(); renderReport(); };
+
+    window.applyTemplate = (weekOffset, selValue) => {
+        const startIdx = currentStartIndex + (weekOffset * 7);
+        scheduleData[startIdx].appliedTemplate = selValue;
+        const template = selValue === 'none' ? null : basicSchedules[selValue];
+        for (let i = 0; i < 7; i++) {
+            const targetDay = scheduleData[startIdx + i];
+            if (!targetDay) continue;
+            const isNationalHoliday = HOLIDAYS_2026[targetDay.date];
+            const isCustomHoliday = customHolidays.includes(targetDay.date);
+            const isCustomWeekday = customWeekdays.includes(targetDay.date);
+            const isEffectiveHoliday = (isNationalHoliday || isCustomHoliday) && !isCustomWeekday;
+            const templateDay = template ? template[i] : null;
+            if (!targetDay.manual) targetDay.manual = {};
+            if (isEffectiveHoliday) {
+                ['skill','morning','leave','items'].forEach(k => { if (!targetDay.manual[k]) targetDay[k] = ""; });
+                for (let pIdx = 0; pIdx < 6; pIdx++) {
+                    if (!targetDay.manual[`p${pIdx}_s`]) targetDay.periods[pIdx].s = "";
+                    if (!targetDay.manual[`p${pIdx}_c`]) targetDay.periods[pIdx].c = "";
+                }
+                continue;
+            }
+            ['skill','morning','leave','event','items'].forEach(k => { if (!targetDay.manual[k]) targetDay[k] = templateDay ? templateDay[k] : ""; });
+            for (let pIdx = 0; pIdx < 6; pIdx++) {
+                if (!targetDay.manual[`p${pIdx}_s`]) targetDay.periods[pIdx].s = templateDay ? templateDay.periods[pIdx].s : "";
+                if (!targetDay.manual[`p${pIdx}_c`]) targetDay.periods[pIdx].c = templateDay ? templateDay.periods[pIdx].c : "";
+            }
+        }
+        save(); render();
+    };
+
+    document.getElementById('printBtn').onclick = () => { window.print(); };
+
+    window.resetAllData = () => {
+        if(confirm("データを全て消去しますか？\n時間割の内容、基本設定、学年設定、別名などすべてが初期状態に戻ります。")){ 
+            localStorage.clear(); 
+            location.reload(); 
+        }
+    };
+
+    document.getElementById('nextBtn').onclick = () => { 
+        const visibleDays = getVisibleDaysCount();
+        if (currentStartIndex + 7 + visibleDays > scheduleData.length) {
+            const last = scheduleData[scheduleData.length - 1];
+            const parts = last.date.split('/');
+            const dateObj = new Date(2026, parseInt(parts[0]) - 1, parseInt(parts[1]));
+            for (let i = 1; i <= 7; i++) {
+                const nD = new Date(dateObj); nD.setDate(dateObj.getDate() + i);
+                scheduleData.push(initDay(`${nD.getMonth() + 1}/${nD.getDate()}`, ["日","月","火","水","木","金","土"][nD.getDay()], nD.getDay()));
+            }
+            save();
+        }
+        currentStartIndex += 7; render(); 
+    };
+    document.getElementById('prevBtn').onclick = () => { 
+        if(currentStartIndex - 7 < 0) {
+            const first = scheduleData[0];
+            const parts = first.date.split('/');
+            const dateObj = new Date(2026, parseInt(parts[0]) - 1, parseInt(parts[1]));
+            const newDays = [];
+            for (let i = 1; i <= 7; i++) {
+                const pD = new Date(dateObj); pD.setDate(dateObj.getDate() - i);
+                newDays.unshift(initDay(`${pD.getMonth() + 1}/${pD.getDate()}`, ["日","月","火","水","木","金","土"][pD.getDay()], pD.getDay()));
+            }
+            scheduleData.unshift(...newDays); currentStartIndex = 0; save();
+        } else {
+            currentStartIndex -= 7;
+        }
+        render(); 
+    };
+
+    window.onresize = render;
+    render();
+    switchMonth(4); // 初期は4月を選択
+</script>
+</body>
+</html>
